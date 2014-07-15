@@ -19,9 +19,15 @@ var playlist = "PLKAPoEduAMh5q7PeDkrnYLu3c1bMPmogE";
 // 2. initial API request to fetch number of videos,
 //    build pagination urls etc...
 request(urlHelper.playlistUrl(playlist), function(err, res, body){
+
+	if(err){
+		console.log('no internet?');
+		throw err;
+	}
+
 	xml2js.parseString(body, function(err, result){
 		totalCount = parseInt( result.feed['openSearch:totalResults'], 10 );
-		console.log('# of videos: ' + totalCount);
+		console.log('# Number of videos: ' + totalCount);
 		playlistTitle = result.feed.title;
 
 		// try creating download dir
@@ -60,6 +66,7 @@ request(urlHelper.playlistUrl(playlist), function(err, res, body){
 		}, function(err){
 			console.log('# got '+videoUrlList.length+' of '+totalCount+' video URLs.');
 			console.log('# starting video download...');
+			console.log('# converting '+threshold+' at a time.');
 			startDownload();
 		});
 	});
@@ -77,17 +84,18 @@ function startDownload(){
 		// quick-and dirty closure for i 
 		(function(videoStream, i){
 			videoStream.on('info', function(info){
-				var fname = pad(i, totalCount.toString().length)+info.filename.replace(/-[^-]*$/,'')+'.mp3';
-				console.log('Starting conversion for '+ fname );
+																// replace filename-<youtube-id>.mp4 with mp3
+				var fname = /*pad(i, totalCount.toString().length)+*/info.filename.replace(/-[^-]*$/,'')+'.mp3';
+				console.log('# Starting conversion for '+ fname );
 				ffmpeg()
 				.input(this)
 				.noVideo()
 				.audioBitrate('256k')
 				.audioChannels(2)
-				.audioCodec('libmp3lame')				// replace filename-<youtube-id>.mp4 with mp3
+				.audioCodec('libmp3lame')				
 				.output( downloadDir+playlistTitle+'/'+fname)
 				.on('end', function(){
-					console.log('finished conversion for ' + fname);
+					console.log('# finished conversion for ' + fname);
 					cb();
 				}).run();
 			});
