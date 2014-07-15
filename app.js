@@ -1,10 +1,12 @@
 var fs = require('fs'),
 	urlHelper = require('./urlHelper.js'),
 	ffmpeg = require('fluent-ffmpeg'),
+	path = require('path'),
 	async = require('async'),
 	request = require('request'),
 	xml2js = require('xml2js'),
 	ytdl = require('youtube-dl'),
+	__dirname = path.dirname(process.execPath),
 	downloadDir = __dirname+'/downloads/',
 	playlistTitle = null,
 	videoUrlList = [],
@@ -14,68 +16,87 @@ var fs = require('fs'),
 	threshold = 25;
 
 // 1. playlist definition
-var playlist = "PLKAPoEduAMh5q7PeDkrnYLu3c1bMPmogE";
+// var playlist = "PLKAPoEduAMh5q7PeDkrnYLu3c1bMPmogE";
 
-// 2. initial API request to fetch number of videos,
-//    build pagination urls etc...
-request(urlHelper.playlistUrl(playlist), function(err, res, body){
+window.initDownload = function( playlist, rootCallback ){
 
-	if(err){
-		console.log('no internet?');
-		throw err;
+	if( !playlist ){
+		log('empty input field.');
+		log('try this one: PLKAPoEduAMh5q7PeDkrnYLu3c1bMPmogE');
+		return rootCallback('empty playlist');
 	}
 
-	xml2js.parseString(body, function(err, result){
-		totalCount = parseInt( result.feed['openSearch:totalResults'], 10 );
-		console.log('# Number of videos: ' + totalCount);
-		playlistTitle = result.feed.title;
+	log('initializing download...');
 
-		// try creating download dir
-		try{
-			fs.mkdirSync(downloadDir);
-		}catch(e){
+	// 2. initial API request to fetch number of videos,
+	//    build pagination urls etc...
+	request(urlHelper.playlistUrl(playlist), function(err, res, body){
 
+		if(err || !body){
+			log('no internet?');
+			throw err;
 		}
+		xml2js.parseString(body, function(err, result){
 
-		// try creating download/<playlist> dir
-		try{
-			fs.mkdirSync(downloadDir+playlistTitle);
-		}catch(e){
-			if( e.code == 'EEXIST' ){
-				rmDir(e.path+'/');
-				fs.mkdirSync(downloadDir+playlistTitle);
+			totalCount = parseInt( result.feed['openSearch:totalResults'], 10 );
+
+			playlistTitle = result.feed.title;
+
+			log('Number of videos: ' + totalCount);
+			log('Playlist title: ' + result.feed.title);
+			log('creating download dir: ' + downloadDir);
+
+			// try creating download dir
+			try{
+				fs.mkdirSync(downloadDir);
+			}catch(e){
+
 			}
-		}
-		
-		// ..async loop over paginated url list..
-		async.each( urlHelper.createAsyncUrls(playlist, totalCount), function(url, cb){
-			request(url, function(err, res, body){
-				xml2js.parseString(body, function(err, result){
-					if( err === null ){
-						result.feed.entry.forEach(function(el, i){
-							videoUrlList.push( el.link[0]['$'].href );
-						});
-					}else{
-						console.log(err, result, body);
-					}
-					
-					cb();
-				});
-			});
-		// ..when we got all video urls..
-		}, function(err){
-			console.log('# got '+videoUrlList.length+' of '+totalCount+' video URLs.');
-			console.log('# starting video download...');
-			console.log('# converting '+threshold+' at a time.');
-			startDownload();
-		});
-	});
 
-});
+			log('creating playlist dir: ' + downloadDir+playlistTitle);
+			// try creating download/<playlist> dir
+			try{
+				fs.mkdirSync(downloadDir+playlistTitle);
+			}catch(e){
+				if( e.code == 'EEXIST' ){
+					rmDir(e.path+'/');
+					fs.mkdirSync(downloadDir+playlistTitle);
+				}
+			}
+			
+			// ..async loop over paginated url list..
+			async.each( urlHelper.createAsyncUrls(playlist, totalCount), function(url, cb){
+				request(url, function(err, res, body){
+					xml2js.parseString(body, function(err, result){
+						if( err === null ){
+							result.feed.entry.forEach(function(el, i){
+								videoUrlList.push( el.link[0]['$'].href );
+							});
+						}else{
+							log(err, result, body);
+						}
+						
+						cb();
+					});
+				});
+			// ..when we got all video urls..
+			}, function(err){
+				log('got '+videoUrlList.length+' of '+totalCount+' video URLs.');
+				log('starting video download...');
+				log('converting '+threshold+' at a time.');
+				startDownload( rootCallback );
+			});
+		});
+
+	});
+};
 
 // 3. download videos and convert to mp3
-function startDownload(){
+function startDownload( rootCallback ){
 	var i = 0;
+
+	log('starting download...');
+
 	// init vidoe streams
 	async.eachLimit(videoUrlList, threshold, function(url, cb){
 		var videoStream = ytdl(url, [], { cwd: downloadDir });
@@ -86,7 +107,7 @@ function startDownload(){
 			videoStream.on('info', function(info){
 																// replace filename-<youtube-id>.mp4 with mp3
 				var fname = /*pad(i, totalCount.toString().length)+*/info.filename.replace(/-[^-]*$/,'')+'.mp3';
-				console.log('# Starting conversion for '+ fname );
+				log('Starting transcode for '+ fname );
 				ffmpeg()
 				.input(this)
 				.noVideo()
@@ -95,7 +116,7 @@ function startDownload(){
 				.audioCodec('libmp3lame')				
 				.output( downloadDir+playlistTitle+'/'+fname)
 				.on('end', function(){
-					console.log('# finished conversion for ' + fname);
+					log('finished transcode for ' + fname);
 					cb();
 				}).run();
 			});
@@ -105,11 +126,12 @@ function startDownload(){
 			console.log('####################');
 			console.log(err);
 			console.log('####################');
+			cb();
 		});
 		
 	}, function(err){
-		console.log(err);
-		console.log('done with all downloads!');
+		log('done with all downloads!');
+		rootCallback(null);
 	});
 }
 
@@ -125,6 +147,11 @@ function rmDir(dirPath){
             rmDir(filePath);
         }
       fs.rmdirSync(dirPath);
+}
+
+function log( msg ){
+	window.logListManager.add(msg);
+	console.log(msg);
 }
 
 function pad(n, width, z) {

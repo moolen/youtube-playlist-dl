@@ -1,0 +1,82 @@
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Roboto Light'), local('Roboto-Light'), url(../fonts/Hgo13k-tfSpn0qi1SFdUfT8E0i7KZn-EPnyo3HZu7kw.woff) format('woff');
+}
+
+body{
+	background: url(../img/light_noise_diagonal.png) repeat;
+	font-family: 'Roboto';
+}
+*::selection{
+	background: rgba(0,0,0,.6);
+}
+
+.container{
+	width: 400px;
+	height: 400px;
+	padding: 20px;
+	margin: 40px auto;
+	background: rgba(255,255,255,.8);
+	box-shadow: 0 1px 3px rgba(0,0,0,.3);
+	border-radius: 4px;
+}
+
+.input-wrapper{
+	width: 100%;
+}
+
+input{
+	display: inline-block;
+	width: 79%;
+	box-sizing: border-box;
+	padding: 6px;
+	margin:0;
+	line-height: 23px;
+	background: #fff;
+	border-radius: 2px;
+	border: 1px solid rgba(0,0,0,.2);
+	text-transform: uppercase;
+}
+
+input:focus, input:active, button:focus, input:active{
+	outline: none;
+	box-shadow: 0;
+}
+
+button{
+	display: inline-block;
+	width: 20%;
+	margin:0;
+	line-height: 23px;
+	padding: 6px;
+	cursor: pointer;
+	border: 1px solid rgb(204,100,80);
+	border-radius: 2px;
+	background: rgb(238,122,28);
+	color: #fff;
+	text-transform: uppercase;
+	-webkit-transition: background .2s ease-in-out;
+}
+
+button:hover{
+	background: rgb(208,92,01);
+}
+
+.loglist{
+	list-style: none;
+	margin:0;
+	padding:0;
+	border-top: 1px dashed #eee;
+	border-left: 1px dashed #eee;
+	border-right: 1px dashed #eee;
+	margin-top: 20px;
+	border-radius: 4px;
+	height: 340px;
+	overflow: auto;
+}
+.loglist li{
+	padding: 4px 4px 4px 10px;
+	border-bottom: 1px dashed #eee;
+}
