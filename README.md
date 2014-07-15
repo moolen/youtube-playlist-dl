@@ -1,5 +1,5 @@
 # YOUTUBE-PLAYLIST-DL
-This app downloads a youtuble playlist and saves it as .mp3 file.
+This app downloads a youtuble playlist and saves it as single .mp3 files.
 
 ## dependencies
 you need to install nodejs to run the application, FFMPEG and libmp3lame to encode the video to mp3.
