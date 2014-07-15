@@ -14,6 +14,7 @@ body{
 }
 
 .container{
+	position: relative;
 	width: 400px;
 	height: 400px;
 	padding: 20px;
@@ -62,6 +63,12 @@ button{
 
 button:hover{
 	background: rgb(208,92,01);
+}
+
+button.disabled{
+	background: rgb(150,65,00);
+	color: #ccc;
+	border: 1px solid rgb(130,50,00);
 }
 
 .loglist{

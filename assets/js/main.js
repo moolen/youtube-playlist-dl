@@ -1,14 +1,14 @@
 // no, we dont need jQuery for that bit.
 window.logListManager = (function(){
 
-	var el = document.querySelector('.loglist');
+	var $el = document.querySelector('.loglist');
 
 	var addtoList = function( message ){
-		var newEl = document.createElement('li');
-		newEl.innerHTML = message;
-		el.appendChild(newEl);
+		var $newEl = document.createElement('li');
+		$newEl.innerHTML = message;
+		$el.appendChild($newEl);
 		// scroll down
-		el.scrollTop = el.scrollHeight;
+		$el.scrollTop = $el.scrollHeight;
 	};
 
 	return {
@@ -37,9 +37,12 @@ window.submitButton = (function(){
 		}
 
 		state.clicked = true;
+		$button.classList.add('disabled');
 
 		window.initDownload( $input.value, function(err){
 			state.clicked = false;
+			$button.classList.remove('disabled');
+
 			if( !err ){
 				console.log('done.');
 				alert('DONE! WE DID IT!');
