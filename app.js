@@ -12,8 +12,9 @@ var fs = require('fs'),
 	videoUrlList = [],
 	paginationList = [],
 	totalCount = 0,
+	startedCount = 0,
 	fetchedCount = 0,
-	threshold = 25;
+	threshold = 10;
 
 // 1. playlist definition
 // var playlist = "PLKAPoEduAMh5q7PeDkrnYLu3c1bMPmogE";
@@ -37,6 +38,10 @@ window.initDownload = function( playlist, rootCallback ){
 			throw err;
 		}
 		xml2js.parseString(body, function(err, result){
+			if( err ){
+				log(err);
+				return;
+			}
 
 			totalCount = parseInt( result.feed['openSearch:totalResults'], 10 );
 
@@ -101,22 +106,28 @@ function startDownload( rootCallback ){
 	async.eachLimit(videoUrlList, threshold, function(url, cb){
 		var videoStream = ytdl(url, [], { cwd: downloadDir });
 		i++;
-
+		
+		
 		// quick-and dirty closure for i 
 		(function(videoStream, i){
 			videoStream.on('info', function(info){
 																// replace filename-<youtube-id>.mp4 with mp3
 				var fname = /*pad(i, totalCount.toString().length)+*/info.filename.replace(/-[^-]*$/,'')+'.mp3';
 				log('Starting transcode for '+ fname );
+				startedCount++;
+				updateProgressbar();
+
 				ffmpeg()
 				.input(this)
 				.noVideo()
 				.audioBitrate('256k')
 				.audioChannels(2)
-				.audioCodec('libmp3lame')				
+				.audioCodec('libmp3lame')
 				.output( downloadDir+playlistTitle+'/'+fname)
 				.on('end', function(){
 					log('finished transcode for ' + fname);
+					fetchedCount++;
+					updateProgressbar();
 					cb();
 				}).run();
 			});
@@ -136,17 +147,28 @@ function startDownload( rootCallback ){
 }
 
 function rmDir(dirPath){
-	try { var files = fs.readdirSync(dirPath); }
-      catch(e) { return; }
-      if (files.length > 0)
-        for (var i = 0; i < files.length; i++) {
-          var filePath = dirPath + '/' + files[i];
-          if (fs.statSync(filePath).isFile())
-            fs.unlinkSync(filePath);
-          else
-            rmDir(filePath);
-        }
-      fs.rmdirSync(dirPath);
+	var files;
+	try {
+		files = fs.readdirSync(dirPath);
+	}catch(e){
+		return;
+	}
+	if (files.length > 0){
+		for (var i = 0; i < files.length; i++) {
+			var filePath = dirPath + '/' + files[i];
+			if (fs.statSync(filePath).isFile()){
+				fs.unlinkSync(filePath);
+			}else{
+				rmDir(filePath);
+			}
+		}
+	}
+	fs.rmdirSync(dirPath);
+}
+
+function updateProgressbar(){
+	var ratio = Math.floor( ( (fetchedCount + startedCount) / (videoUrlList.length * 2) ) * 100 );
+	window.progressBar.set(  ratio + "%", ratio );
 }
 
 function log( msg ){

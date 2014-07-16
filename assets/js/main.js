@@ -16,6 +16,22 @@ window.logListManager = (function(){
 	};
 }());
 
+window.progressBar = (function(){
+
+	var $el = document.querySelector('.progressbar'),
+		$inner = document.querySelector('.progressbar-inner');
+
+	var set = function( msg, width ){
+		$inner.style.width = width + "%";
+		$inner.innerHTML = msg;
+	};
+
+	return {
+		set: set
+	};
+
+}());
+
 window.submitButton = (function(){
 	
 	var state = {
