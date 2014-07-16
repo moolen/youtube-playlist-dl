@@ -15,7 +15,7 @@
   "author": "",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "youtube-dl": "~1.5.8",
+    "youtube-dl": "https://github.com/moolen/node-youtube-dl.git",
     "xml2js": "~0.4.4",
     "request": "~2.37.0",
     "async": "~0.9.0",
